@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Africa Debt Data Downloader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #020617;
+        --bg-card: #020617;
+        --bg-elevated: #020617;
+        --surface: #020617;
+        --card-inner: #020617;
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.14);
+        --border: rgba(148, 163, 184, 0.35);
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --radius-lg: 18px;
+        --radius-md: 12px;
+        --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0, #020617 45%);
+        color: var(--text-main);
+        min-height: 100vh;
+      }
+
+      .app {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px 16px 32px;
+      }
+
+      header {
+        margin-bottom: 14px;
+        text-align: left;
+      }
+
+      header h1 {
+        font-size: 1.7rem;
+        margin: 0 0 6px;
+        letter-spacing: 0.03em;
+      }
+
+      header p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        max-width: 520px;
+      }
+
+      .shell-card {
+        border-radius: 32px;
+        background: linear-gradient(135deg, rgba(148, 163, 184, 0.14), transparent);
+        padding: 1px;
+        margin-top: 10px;
+        box-shadow: var(--shadow-soft);
+      }
+
+      .card {
+        background: rgba(15, 23, 42, 0.93);
+        border-radius: 30px;
+        padding: 18px 18px 20px;
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+      }
+
+      .control-row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .label-small {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.7);
+        background: radial-gradient(circle at top left, #020617, #020617) padding-box,
+          linear-gradient(135deg, rgba(56, 189, 248, 0.5), rgba(56, 189, 248, 0.15)) border-box;
+        color: var(--text-main);
+        outline: none;
+        appearance: none;
+        background-position: 0 0;
+        background-repeat: no-repeat;
+      }
+
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent-soft);
+      }
+
+      .hint {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 20px 3px 8px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #cbd5f5;
+      }
+
+      .source-group {
+        margin-top: 6px;
+      }
+
+      .source-headline {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .source-headline h2 {
+        font-size: 0.98rem;
+        margin: 0;
+      }
+
+      .source-headline span {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+
+      .dataset-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      @media (min-width: 720px) {
+        .dataset-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .dataset-card {
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.96), #020617);
+        padding: 10px 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .dataset-name {
+        font-size: 0.92rem;
+        font-weight: 600;
+      }
+
+      .dataset-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.74rem;
+        display: inline-flex;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        color: var(--accent);
+        margin-top: 4px;
+        width: fit-content;
+      }
+
+      .dataset-meta {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .dataset-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 7px 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: transform 0.06s ease, box-shadow 0.12s ease, background 0.12s ease;
+        white-space: nowrap;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+        color: #0b1120;
+        box-shadow: 0 10px 24px rgba(56, 189, 248, 0.5);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(56, 189, 248, 0.65);
+      }
+
+      .btn-secondary {
+        background: rgba(15, 23, 42, 0.9);
+        color: var(--text-muted);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(30, 64, 175, 0.4);
+        color: #e5e7eb;
+      }
+
+      .dataset-url {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+        word-break: break-all;
+      }
+
+      footer {
+        margin-top: 20px;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>Africa Debt Data Downloader</h1>
+        <p>
+          Pick a country and download debt-related datasets directly from the official World Bank API. Links are
+          generated per country and grouped by source.
+        </p>
+      </header>
+
+      <div class="shell-card">
+        <div class="card">
+          <div class="control-row">
+            <div>
+              <div class="label-small">Country</div>
+              <select id="countrySelect" aria-label="Select country"></select>
+              <div class="hint">
+                Includes an option for <strong>All African Countries (54)</strong> using a multi-country World Bank
+                call.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section>
+        <div class="section-title">World Bank & other sources</div>
+        <div id="sourcesContainer"></div>
+      </section>
+
+      <footer>
+        CSVs come from the official World Bank Data API (<code>downloadformat=csv</code> ZIPs). IMF, AfDB, and the
+        African Debt Database are accessed via their own web portals.
+      </footer>
+    </div>
+
+    <script>
+      const africanCountries = [
+        { name: "Algeria", code: "DZA" },
+        { name: "Angola", code: "AGO" },
+        { name: "Benin", code: "BEN" },
+        { name: "Botswana", code: "BWA" },
+        { name: "Burkina Faso", code: "BFA" },
+        { name: "Burundi", code: "BDI" },
+        { name: "Cabo Verde", code: "CPV" },
+        { name: "Cameroon", code: "CMR" },
+        { name: "Central African Republic", code: "CAF" },
+        { name: "Chad", code: "TCD" },
+        { name: "Comoros", code: "COM" },
+        { name: "Congo, Rep.", code: "COG" },
+        { name: "Congo, Dem. Rep.", code: "COD" },
+        { name: "Côte d'Ivoire", code: "CIV" },
+        { name: "Djibouti", code: "DJI" },
+        { name: "Egypt, Arab Rep.", code: "EGY" },
+        { name: "Equatorial Guinea", code: "GNQ" },
+        { name: "Eritrea", code: "ERI" },
+        { name: "Eswatini", code: "SWZ" },
+        { name: "Ethiopia", code: "ETH" },
+        { name: "Gabon", code: "GAB" },
+        { name: "Gambia, The", code: "GMB" },
+        { name: "Ghana", code: "GHA" },
+        { name: "Guinea", code: "GIN" },
+        { name: "Guinea-Bissau", code: "GNB" },
+        { name: "Kenya", code: "KEN" },
+        { name: "Lesotho", code: "LSO" },
+        { name: "Liberia", code: "LBR" },
+        { name: "Libya", code: "LBY" },
+        { name: "Madagascar", code: "MDG" },
+        { name: "Malawi", code: "MWI" },
+        { name: "Mali", code: "MLI" },
+        { name: "Mauritania", code: "MRT" },
+        { name: "Mauritius", code: "MUS" },
+        { name: "Morocco", code: "MAR" },
+        { name: "Mozambique", code: "MOZ" },
+        { name: "Namibia", code: "NAM" },
+        { name: "Niger", code: "NER" },
+        { name: "Nigeria", code: "NGA" },
+        { name: "Rwanda", code: "RWA" },
+        { name: "São Tomé and Principe", code: "STP" },
+        { name: "Senegal", code: "SEN" },
+        { name: "Seychelles", code: "SYC" },
+        { name: "Sierra Leone", code: "SLE" },
+        { name: "Somalia", code: "SOM" },
+        { name: "South Africa", code: "ZAF" },
+        { name: "South Sudan", code: "SSD" },
+        { name: "Sudan", code: "SDN" },
+        { name: "Tanzania", code: "TZA" },
+        { name: "Togo", code: "TGO" },
+        { name: "Tunisia", code: "TUN" },
+        { name: "Uganda", code: "UGA" },
+        { name: "Zambia", code: "ZMB" },
+        { name: "Zimbabwe", code: "ZWE" },
+      ].sort((a, b) => a.name.localeCompare(b.name));
+
+      const allCountriesCode = africanCountries.map((c) => c.code).join(";");
+      const allCountriesOption = { name: "All African Countries (54)", code: allCountriesCode };
+      const countryOptions = [allCountriesOption, ...africanCountries];
+
+      const WB_TEMPLATE = "https://api.worldbank.org/v2/country/{country}/indicator/{indicator}?downloadformat=csv";
+
+      const sources = [
+        {
+          id: "wb_external",
+          name: "World Bank – IDS: External Debt Stocks & Structure",
+          description: "External public & publicly guaranteed debt levels and ratios.",
+          kind: "worldbankApi",
+          datasets: [
+            {
+              name: "External debt stocks, total (current US$)",
+              indicator: "DT.DOD.DECT.CD",
+              type: "External debt – stock (level)",
+              url: "https://data.worldbank.org/indicator/DT.DOD.DECT.CD",
+            },
+            {
+              name: "External debt stocks (% of GNI)",
+              indicator: "DT.DOD.DECT.GN.ZS",
+              type: "External debt – stock / GNI",
+              url: "https://data.worldbank.org/indicator/DT.DOD.DECT.GN.ZS",
+            },
+            {
+              name: "External debt stocks (% of exports of goods, services and primary income)",
+              indicator: "DT.DOD.DECT.EX.ZS",
+              type: "External debt – stock / exports",
+              url: "https://data.worldbank.org/indicator/DT.DOD.DECT.EX.ZS",
+            },
+            {
+              name: "External debt stocks, public and publicly guaranteed (current US$)",
+              indicator: "DT.DOD.DPPG.CD",
+              type: "PPG external debt – stock",
+              url: "https://data.worldbank.org/indicator/DT.DOD.DPPG.CD",
+            },
+            {
+              name: "External debt stocks, PPG (% of GNI)",
+              indicator: "DT.DOD.DPPG.GN.ZS",
+              type: "PPG external debt – stock / GNI",
+              url: "https://data.worldbank.org/indicator/DT.DOD.DPPG.GN.ZS",
+            },
+            {
+              name: "External debt stocks, long-term (current US$)",
+              indicator: "DT.DOD.DLXF.CD",
+              type: "Long-term external debt – stock",
+              url: "https://data.worldbank.org/indicator/DT.DOD.DLXF.CD",
+            },
+            {
+              name: "Short-term debt (% of total external debt)",
+              indicator: "DT.DOD.DSTC.ZS",
+              type: "Short-term external debt – share",
+              url: "https://data.worldbank.org/indicator/DT.DOD.DSTC.ZS",
+            },
+          ],
+        },
+        {
+          id: "wb_service",
+          name: "World Bank – IDS: Debt Service & Repayments",
+          description: "Debt service burden and principal repayments.",
+          kind: "worldbankApi",
+          datasets: [
+            {
+              name: "Total external debt service (current US$)",
+              indicator: "DT.TDS.DECT.CD",
+              type: "Total debt service – flows",
+              url: "https://data.worldbank.org/indicator/DT.TDS.DECT.CD",
+            },
+            {
+              name: "Total external debt service (% of exports of goods, services and primary income)",
+              indicator: "DT.TDS.DECT.EX.ZS",
+              type: "Total debt service – exports ratio",
+              url: "https://data.worldbank.org/indicator/DT.TDS.DECT.EX.ZS",
+            },
+            {
+              name: "Total external debt service (% of GNI)",
+              indicator: "DT.TDS.DECT.GN.ZS",
+              type: "Total debt service – GNI ratio",
+              url: "https://data.worldbank.org/indicator/DT.TDS.DECT.GN.ZS",
+            },
+            {
+              name: "Principal repayments on external debt, long-term (current US$)",
+              indicator: "DT.AMT.DLXF.CD",
+              type: "Principal repayments – long-term",
+              url: "https://data.worldbank.org/indicator/DT.AMT.DLXF.CD",
+            },
+          ],
+        },
+        {
+          id: "other",
+          name: "Other Sources & Portals (IMF, AfDB, African Debt Database)",
+          description: "For total public debt, domestic debt, and instrument-level detail.",
+          kind: "externalPortal",
+          datasets: [
+            {
+              name: "IMF – World Economic Outlook: General government gross debt (% of GDP)",
+              type: "Total public debt – ratio",
+              portalUrl: "https://www.imf.org/external/datamapper/datasets/WEO",
+            },
+            {
+              name: "IMF – Global Debt Database",
+              type: "Public + private non-financial debt",
+              portalUrl: "https://www.imf.org/external/datamapper/datasets/GDD",
+            },
+            {
+              name: "AfDB – Africa Debt Statistics (Open Data portal)",
+              type: "Africa-specific debt, GDP, and service metrics",
+              portalUrl: "https://dataportal.opendataforafrica.org/bvtkzvb/debt",
+            },
+            {
+              name: "African Debt Database (ADD)",
+              type: "Instrument-level domestic + external debt for 54 African countries",
+              portalUrl: "https://africandebtdatabase.com/",
+            },
+          ],
+        },
+      ];
+
+      function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text) e.textContent = text;
+        return e;
+      }
+
+      function renderCountries() {
+        const sel = document.getElementById("countrySelect");
+        countryOptions.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c.code;
+          opt.textContent = c.name;
+          sel.appendChild(opt);
+        });
+        sel.value = "KEN";
+        if (!sel.value) sel.selectedIndex = 0;
+      }
+
+      function buildWBUrl(countryCode, indicator) {
+        return WB_TEMPLATE.replace("{country}", encodeURIComponent(countryCode)).replace(
+          "{indicator}",
+          encodeURIComponent(indicator)
+        );
+      }
+
+      function renderSources() {
+        const container = document.getElementById("sourcesContainer");
+        container.innerHTML = "";
+
+        sources.forEach((source) => {
+          const group = el("div", "source-group");
+          const header = el("div", "source-headline");
+          header.appendChild(el("h2", "", source.name));
+          header.appendChild(el("span", "", source.description));
+          group.appendChild(header);
+
+          const grid = el("div", "dataset-grid");
+
+          source.datasets.forEach((ds) => {
+            const card = el("div", "dataset-card");
+
+            const name = el("div", "dataset-name", ds.name);
+            card.appendChild(name);
+
+            if (ds.indicator) {
+              const code = el("div", "dataset-code", ds.indicator);
+              code.dataset.indicator = ds.indicator;
+              card.appendChild(code);
+            }
+
+            if (ds.type) {
+              card.appendChild(el("div", "dataset-meta", ds.type));
+            }
+
+            const actions = el("div", "dataset-actions");
+
+            if (source.kind === "worldbankApi" && ds.indicator) {
+              const dl = document.createElement("a");
+              dl.className = "btn btn-primary wb-download";
+              dl.target = "_blank";
+              dl.rel = "noopener noreferrer";
+              dl.textContent = "Download CSV (World Bank)";
+              dl.dataset.indicator = ds.indicator;
+              actions.appendChild(dl);
+
+              const more = document.createElement("a");
+              more.className = "btn btn-secondary";
+              more.target = "_blank";
+              more.rel = "noopener noreferrer";
+              more.textContent = "Indicator details";
+              more.href = ds.url || "#";
+              actions.appendChild(more);
+
+              card.appendChild(actions);
+
+              const urlText = el("div", "dataset-url");
+              urlText.dataset.role = "wb-url-text";
+              card.appendChild(urlText);
+            } else if (source.kind === "externalPortal" && ds.portalUrl) {
+              const portal = document.createElement("a");
+              portal.className = "btn btn-secondary";
+              portal.target = "_blank";
+              portal.rel = "noopener noreferrer";
+              portal.textContent = "Open data portal";
+              portal.href = ds.portalUrl;
+              actions.appendChild(portal);
+              card.appendChild(actions);
+            }
+
+            grid.appendChild(card);
+          });
+
+          group.appendChild(grid);
+          container.appendChild(group);
+        });
+      }
+
+      function updateWBLinks() {
+        const sel = document.getElementById("countrySelect");
+        const countryCode = sel.value;
+        const countryName = sel.options[sel.selectedIndex]?.textContent || "";
+
+        document.querySelectorAll(".wb-download").forEach((link) => {
+          const ind = link.dataset.indicator;
+          const url = buildWBUrl(countryCode, ind);
+          link.href = url;
+        });
+
+        document.querySelectorAll(".dataset-url[data-role='wb-url-text']").forEach((div) => {
+          const card = div.closest(".dataset-card");
+          const indEl = card.querySelector(".dataset-code");
+          const indicator = indEl?.textContent || "";
+          const url = buildWBUrl(countryCode, indicator);
+          div.textContent = `CSV ZIP for ${countryName}: ${url}`;
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderCountries();
+        renderSources();
+        updateWBLinks();
+
+        document.getElementById("countrySelect").addEventListener("change", updateWBLinks);
+      });
+    </script>
+  </body>
+</html>
